@@ -15,7 +15,7 @@ const __dirname = path.resolve();
 
 // Middleware should be defined before routes
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "https://mernstack-chat-app-5.onrender.com"],
     credentials: true
 }));
 

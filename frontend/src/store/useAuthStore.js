@@ -91,6 +91,7 @@ export const useAuthStore = create((set, get) => ({
         if(!authUser || get().socket?.connected) return;
         const socket = io(BASE_URL, {
             auth: { userId: authUser._id },
+            transports: ['websocket'],  // Force websocket transport to avoid polling issues
         });
 
         socket.on("getOnlineUsers", (userIds) => {
