@@ -21,29 +21,40 @@ export function  getReceiverSocketId(userId)  {
 
 const userSocketMap = {}; //{userId: socketId}
 
-io.on('connection', (socket) => {
- console.log("A user connected", socket.id);
-
- const userId = socket.handshake.query.userId;
- if(userId) {
-   userSocketMap[userId] = socket.id;
-   socket.userId = userId;
- }
-
- io.emit("getOnlineUsers", Object.keys(userSocketMap));
-
- socket.on('sendBotMessage', (data) => {
-     console.log('Received bot message:', data);
-     const response = { message: `Bot: ${data.message}` };
-     socket.emit('receiveBotMessage', response);
- });
-
- socket.on('disconnect', () => {
-  console.log("A user disconnected", socket.id);
-  if (socket.userId) {
-    delete userSocketMap[socket.userId];
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+io.use((socket, next) => {
+  console.log("Socket handshake auth:", socket.handshake.auth);
+  console.log("Socket handshake query:", socket.handshake.query);
+  const userId = socket.handshake.auth.userId || socket.handshake.query.userId;
+  if (!userId) {
+    console.log("Invalid userId in handshake");
+    return next(new Error("Invalid userId"));
   }
- });
+  socket.userId = userId;
+  next();
+});
+
+io.on('connection', (socket) => {
+  console.log("A user connected", socket.id);
+
+  const userId = socket.userId;
+  if(userId) {
+    userSocketMap[userId] = socket.id;
+  }
+
+  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+  socket.on('sendBotMessage', (data) => {
+      console.log('Received bot message:', data);
+      const response = { message: `Bot: ${data.message}` };
+      socket.emit('receiveBotMessage', response);
+  });
+
+  socket.on('disconnect', () => {
+    console.log("A user disconnected", socket.id);
+    if (socket.userId) {
+      delete userSocketMap[socket.userId];
+      io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    }
+  });
 });
 export {io, app, server};
